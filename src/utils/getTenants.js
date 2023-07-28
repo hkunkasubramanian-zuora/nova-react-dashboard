@@ -10,7 +10,6 @@ async function getTenants() {
 
     var result = await axios.get('http://localhost:5000/internal/neo-engine/nova')
         .then(res => {
-            console.log('data fetched');
             return res.data;
         })
         .catch(err => {

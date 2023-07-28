@@ -19,12 +19,20 @@ function AdminPage() {
         setCurrentTenantId(event.target.value);
     }
 
-    const onSubmit = async ({query}) => {
+    const onSubmit = async (query) => {
         setLoaded(false);
+        console.log("Query output2343: ", query);
+
+        const config = {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
         const output = await axios.post('http://localhost:5000/internal/neo-engine/query', {
             'tenantId': currentTenantId,
             'query': query
-        });
+        }, config);
         setQueryOutput(output.data);
         setLoaded(true);
     }
@@ -33,7 +41,6 @@ function AdminPage() {
 
         (async () => {
             const tenants = await getTenants();
-            console.log(tenants);
             const schemas = [];
             for (var i = 0; i < tenants.length; i++) {
                 schemas.push(tenants[i].tenantId);
@@ -50,17 +57,17 @@ function AdminPage() {
     }
 
     return <div>
-        Select SCHEMA: <SchemaSelector schemas={tenantList} handleSchemaChange={handleSchemaChange} />
+        Select tenant ID: <SchemaSelector schemas={tenantList} handleSchemaChange={handleSchemaChange} />
         <SqlInputBox onSubmit={onSubmit} />
         {queryOutput != null ? <QueryOutput queryOutput={queryOutput} /> : null}
-        {currentTenantId != null ? <TenantData tenantInfo={{enabled: true, tenantId: currentTenantId}} /> : null}
+        {/*{currentTenantId != null ? <TenantData tenantInfo={{enabled: true, tenantId: currentTenantId}} /> : null}*/}
     </div>;
 
 }
 
 const QueryOutput = ({queryOutput}) => {
 
-    console.log(queryOutput);
+
     const columns = [];
 
     const columnList = queryOutput['columnInfoList'];
@@ -71,17 +78,34 @@ const QueryOutput = ({queryOutput}) => {
 
     for(var i = 0; i < columnList.length; i++) {
         var column = columnList[i];
-        columns.push(column['displayName']);
+        columns.push({field: column['columnName'].toLowerCase(), headerName: column['displayName'], width: 400});
     }
+
+    console.log("Query output2343 column: ", columns);
 
     const rows = [];
     const rowList = queryOutput['recordDataList'];
 
+    var counter = 0;
+
     for (var i = 0; i < rowList.length; i++) {
-        var row = rowList[i];
-        rows.push(row['columnValue']);
+        var rowData = rowList[i];
+
+        const outputObject = {};
+
+        rowData.forEach(columnObject => {
+            outputObject[columnObject['columnName'].toLowerCase()] = columnObject['columnValue'];
+        });
+
+        if (outputObject['id'] === undefined) {
+            outputObject['id'] = counter;
+            counter++;
+        }
+
+        rows.push(outputObject);
     }
 
+    console.log("Query output2343 rows: ", rows);
 
     return (
         <RootContainer>
